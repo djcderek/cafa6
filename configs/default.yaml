@@ -1,0 +1,42 @@
+# CAFA-6 Default Configuration
+
+data:
+  train_fasta: data/cafa-6-protein-function-prediction/Train/train_sequences.fasta
+  test_fasta: data/cafa-6-protein-function-prediction/Test/testsuperset.fasta
+  train_terms: data/cafa-6-protein-function-prediction/Train/train_terms.tsv
+  go_obo: data/cafa-6-protein-function-prediction/Train/go-basic.obo
+  ia_weights: data/cafa-6-protein-function-prediction/IA.tsv
+  embeddings_dir: data/embeddings
+  ontology_terms_dir: data/ontology
+
+model:
+  embedding_dim: 1024
+  hidden_dims: [512, 256]
+  dropout: 0.1
+  # num_mf_terms, num_bp_terms, num_cc_terms are set dynamically
+
+training:
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  epochs: 100
+  patience: 10
+  val_split: 0.1
+  checkpoint_dir: checkpoints
+  seed: 42
+  num_workers: 0
+  pin_memory: true
+
+inference:
+  checkpoint_path: checkpoints/best_model.pt
+  submission_path: submissions/submission.tsv
+  batch_size: 64
+  max_terms_per_protein: 1500
+  min_score: 0.000001
+
+embedding:
+  model_name: Rostlab/prot_t5_xl_uniref50
+  batch_size: 8
+  max_length: 1024
+  cache_format: parquet
+
