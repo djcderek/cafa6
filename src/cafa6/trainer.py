@@ -11,6 +11,12 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+try:
+    import wandb
+    WANDB_AVAILABLE = True
+except ImportError:
+    WANDB_AVAILABLE = False
+
 from .model import MultiHeadMLP
 
 
@@ -89,6 +95,8 @@ class Trainer:
         checkpoint_dir: Path | str = "checkpoints",
         patience: int = 10,
         device: torch.device | None = None,
+        use_wandb: bool = False,
+        wandb_config: dict[str, Any] | None = None,
     ) -> None:
         """
         Initialize the trainer.
@@ -102,11 +110,15 @@ class Trainer:
             checkpoint_dir: Directory to save checkpoints.
             patience: Patience for early stopping.
             device: Device for training.
+            use_wandb: Whether to log metrics to Weights & Biases.
+            wandb_config: Configuration dict to log to wandb.
         """
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = model.to(self.device)
         self.train_loader = train_loader
         self.val_loader = val_loader
+        self.learning_rate = learning_rate
+        self.weight_decay = weight_decay
 
         self.optimizer = Adam(
             model.parameters(),
@@ -122,6 +134,12 @@ class Trainer:
 
         self.early_stopping = EarlyStopping(patience=patience)
         self.best_val_loss = float("inf")
+
+        # Wandb logging
+        self.use_wandb = use_wandb and WANDB_AVAILABLE
+        self.wandb_config = wandb_config or {}
+        if self.use_wandb and not WANDB_AVAILABLE:
+            print("Warning: wandb requested but not installed. Skipping wandb logging.")
 
     def train_epoch(self) -> float:
         """
@@ -225,6 +243,25 @@ class Trainer:
                 - train_loss: List of training losses per epoch
                 - val_loss: List of validation losses per epoch
         """
+        # Initialize wandb if enabled
+        if self.use_wandb:
+            config = {
+                "learning_rate": self.learning_rate,
+                "weight_decay": self.weight_decay,
+                "epochs": epochs,
+                "patience": self.early_stopping.patience,
+                "batch_size": self.train_loader.batch_size,
+                "model_config": self.model.get_config(),
+                **self.wandb_config,
+            }
+            wandb.init(
+                project="cafa6",
+                config=config,
+                reinit=True,
+            )
+            # Watch model for gradient logging
+            wandb.watch(self.model, log="gradients", log_freq=100)
+
         history = {
             "train_loss": [],
             "val_loss": [],
@@ -242,6 +279,16 @@ class Trainer:
             history["val_loss"].append(val_loss)
 
             print(f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+
+            # Log to wandb
+            if self.use_wandb:
+                wandb.log({
+                    "epoch": epoch + 1,
+                    "train_loss": train_loss,
+                    "val_loss": val_loss,
+                    "best_val_loss": self.best_val_loss if val_loss >= self.best_val_loss else val_loss,
+                    "learning_rate": self.learning_rate,
+                })
 
             # Save best model
             if val_loss < self.best_val_loss:
@@ -265,6 +312,10 @@ class Trainer:
                 print(f"\nEarly stopping triggered at epoch {epoch + 1}")
                 break
 
+        # Finish wandb run
+        if self.use_wandb:
+            wandb.finish()
+
         return history
 
 
@@ -279,6 +330,8 @@ def train_model(
     checkpoint_dir: Path | str = "checkpoints",
     seed: int = 42,
     device: torch.device | None = None,
+    use_wandb: bool = False,
+    wandb_config: dict[str, Any] | None = None,
 ) -> dict[str, list[float]]:
     """
     Convenience function to train a model.
@@ -294,6 +347,8 @@ def train_model(
         checkpoint_dir: Checkpoint directory.
         seed: Random seed.
         device: Device for training.
+        use_wandb: Whether to log metrics to Weights & Biases.
+        wandb_config: Additional configuration to log to wandb.
 
     Returns:
         Training history.
@@ -309,6 +364,8 @@ def train_model(
         checkpoint_dir=checkpoint_dir,
         patience=patience,
         device=device,
+        use_wandb=use_wandb,
+        wandb_config=wandb_config,
     )
 
     return trainer.train(epochs)

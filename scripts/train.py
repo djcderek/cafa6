@@ -61,6 +61,17 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Override learning rate from config.",
     )
+    parser.add_argument(
+        "--wandb",
+        action="store_true",
+        help="Enable Weights & Biases logging.",
+    )
+    parser.add_argument(
+        "--wandb-run-name",
+        type=str,
+        default=None,
+        help="Name for the wandb run.",
+    )
     return parser.parse_args()
 
 
@@ -193,8 +204,23 @@ def main() -> None:
     num_params = sum(p.numel() for p in model.parameters())
     print(f"Model parameters: {num_params:,}")
 
+    # Build wandb config
+    wandb_config = {
+        "model_hidden_dims": config.model.hidden_dims,
+        "model_dropout": config.model.dropout,
+        "val_split": config.training.val_split,
+        "num_mf_terms": term_index.num_terms("MF"),
+        "num_bp_terms": term_index.num_terms("BP"),
+        "num_cc_terms": term_index.num_terms("CC"),
+        "num_train_proteins": len(train_protein_ids),
+    }
+    if args.wandb_run_name:
+        wandb_config["run_name"] = args.wandb_run_name
+
     # Train
     print(f"\nStarting training for {config.training.epochs} epochs...")
+    if args.wandb:
+        print("Weights & Biases logging enabled")
     history = train_model(
         model=model,
         train_loader=train_loader,
@@ -206,6 +232,8 @@ def main() -> None:
         checkpoint_dir=config.training.checkpoint_dir,
         seed=config.training.seed,
         device=device,
+        use_wandb=args.wandb,
+        wandb_config=wandb_config,
     )
 
     # Save term index for inference
