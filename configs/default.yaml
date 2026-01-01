@@ -1,11 +1,11 @@
 # CAFA-6 Default Configuration
 
 data:
-  train_fasta: data/cafa-6-protein-function-prediction/Train/train_sequences.fasta
-  test_fasta: data/cafa-6-protein-function-prediction/Test/testsuperset.fasta
-  train_terms: data/cafa-6-protein-function-prediction/Train/train_terms.tsv
-  go_obo: data/cafa-6-protein-function-prediction/Train/go-basic.obo
-  ia_weights: data/cafa-6-protein-function-prediction/IA.tsv
+  train_fasta: data/cafa-6-dataset/Train/train_sequences.fasta
+  test_fasta: data/cafa-6-dataset/Test/testsuperset.fasta
+  train_terms: data/cafa-6-dataset/Train/train_terms.tsv
+  go_obo: data/cafa-6-dataset/Train/go-basic.obo
+  ia_weights: data/cafa-6-dataset/IA.tsv
   embeddings_dir: data/embeddings
   ontology_terms_dir: data/ontology
 

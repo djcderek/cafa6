@@ -11,11 +11,11 @@ import yaml
 class DataConfig:
     """Configuration for data paths and processing."""
 
-    train_fasta: Path = Path("data/cafa-6-protein-function-prediction/Train/train_sequences.fasta")
-    test_fasta: Path = Path("data/cafa-6-protein-function-prediction/Test/testsuperset.fasta")
-    train_terms: Path = Path("data/cafa-6-protein-function-prediction/Train/train_terms.tsv")
-    go_obo: Path = Path("data/cafa-6-protein-function-prediction/Train/go-basic.obo")
-    ia_weights: Path = Path("data/cafa-6-protein-function-prediction/IA.tsv")
+    train_fasta: Path = Path("data/cafa-6-dataset/Train/train_sequences.fasta")
+    test_fasta: Path = Path("data/cafa-6-dataset/Test/testsuperset.fasta")
+    train_terms: Path = Path("data/cafa-6-dataset/Train/train_terms.tsv")
+    go_obo: Path = Path("data/cafa-6-dataset/Train/go-basic.obo")
+    ia_weights: Path = Path("data/cafa-6-dataset/IA.tsv")
     embeddings_dir: Path = Path("data/embeddings")
     ontology_terms_dir: Path = Path("data/ontology")
 
